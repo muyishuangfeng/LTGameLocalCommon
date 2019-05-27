@@ -19,108 +19,80 @@
 # If you keep the line number information, uncomment this to
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
-# 代码混淆压缩比，在0~7之间，默认为5，一般不做修改
--optimizationpasses 5
-
-# 混合时不使用大小写混合，混合后的类名为小写
+# 表示混淆时不使用大小写混合类名
 -dontusemixedcaseclassnames
-
-# 指定不去忽略非公共库的类
+# 表示不跳过library中的非public的类
 -dontskipnonpubliclibraryclasses
-
-# 指定不去忽略非公共库的类成员
--dontskipnonpubliclibraryclassmembers
-
-# 这句话能够使我们的项目混淆后产生映射文件
-# 包含有类名->混淆后类名的映射关系
+# 打印混淆的详细信息
 -verbose
 
-# 不做预校验，preverify是proguard的四个步骤之一，Android不需要preverify，去掉这一步能够加快混淆速度。
+# Optimization is turned off by default. Dex does not like code run
+# through the ProGuard optimize and preverify steps (and performs some
+# of these optimizations on its own).
+-dontoptimize
+# 表示不进行校验,这个校验作用 在java平台上的
 -dontpreverify
+# Note that if you want to enable optimization, you cannot just
+# include optimization flags in your own project configuration file;
+# instead you will need to point to the
+# "proguard-android-optimize.txt" file instead of this one from your
+# project.properties file.
 
-# 保留Annotation不混淆 这在JSON实体映射时非常重要，比如fastJson
--keepattributes *Annotation*,InnerClasses
-
-# 避免混淆泛型
--keepattributes Signature
-
-# 抛出异常时保留代码行号
--keepattributes SourceFile,LineNumberTable
-
-# 指定混淆是采用的算法，后面的参数是一个过滤器
-# 这个过滤器是谷歌推荐的算法，一般不做更改
--optimizations !code/simplification/cast,!field/*,!class/merging/*
-
-# 忽略警告
--ignorewarnings
-
-# 设置是否允许改变作用域
--allowaccessmodification
-
-# 把混淆类中的方法名也混淆了
--useuniqueclassmembernames
-
-# apk 包内所有 class 的内部结构
--dump class_files.txt
-
-# 未混淆的类和成员
--printseeds seeds_txt
-
-# 列出从apk中删除的代码
--printusage unused.txt
-
-# 混淆前后的映射
--printmapping mapping.txt
-
--keep public class * extends android.app.Activity
--keep public class * extends android.app.Application
--keep public class * extends android.app.Service
--keep public class * extends android.content.BroadcastReceiver
--keep public class * extends android.content.ContentProvider
--keep public class * extends android.app.backup.BackupAgent
--keep public class * extends android.preference.Preference
--keep public class * extends android.support.v4.app.Fragment
--keep public class * extends android.app.Fragment
--keep public class * extends android.view.view
--keep public class com.android.vending.licensing.ILicensingService
 -keepattributes *Annotation*
--keepclassmembers enum * {
-    public static **[] values();
-    public static ** valueOf(java.lang.String);
-}
+-keep public class com.google.vending.licensing.ILicensingService
+-keep public class com.android.vending.licensing.ILicensingService
+
+# For native methods, see http://proguard.sourceforge.net/manual/examples.html#native
 -keepclasseswithmembernames class * {
     native <methods>;
 }
 
--keepattributes *JavascriptInterface*
--keepclassmembers class fqcn.of.javascript.interface.for.webview {
-   public *;
+# keep setters in Views so that animations can still work.
+# see http://proguard.sourceforge.net/manual/examples.html#beans
+-keepclassmembers public class * extends android.view.View {
+   void set*(***);
+   *** get*();
 }
 
--keepclassmembers class * extends android.webkit.WebViewClient {
-    public void *(android.webkit.WebView, java.lang.String, android.graphics.Bitmap);
-    public boolean *(android.webkit.WebView, java.lang.String);
+# We want to keep methods in Activity that could be used in the XML attribute onClick
+-keepclassmembers class * extends android.app.Activity {
+   public void *(android.view.View);
 }
 
--keepclassmembers class * extends android.webkit.WebViewClient {
-    public void *(android.webkit.WebView, java.lang.String);
-}
--keep class * implements android.os.Parcelable {
-  public static final android.os.Parcelable$Creator *;
-}
-
--keep class * implements java.io.Serializable {
-    public *;
+# For enumeration classes, see http://proguard.sourceforge.net/manual/examples.html#enumerations
+-keepclassmembers enum * {
+    public static **[] values();
+    public static ** valueOf(java.lang.String);
 }
 
--keepclassmembers class * implements java.io.Serializable {
-   static final long serialVersionUID;
-   private static final java.io.ObjectStreamField[] serialPersistentFields;
-   !static !transient <fields>;
-   private void writeObject(java.io.ObjectOutputStream);
-   private void readObject(java.io.ObjectInputStream);
-   java.lang.Object writeReplace();
-   java.lang.Object readResolve();
+-keepclassmembers class * implements android.os.Parcelable {
+  public static final android.os.Parcelable$Creator CREATOR;
+}
+
+-keepclassmembers class **.R$* {
+    public static <fields>;
+}
+
+# The support library contains references to newer platform versions.
+# Don't warn about those in case this app is linking against an older
+# platform version.  We know about them, and they are safe.
+-dontwarn android.support.**
+
+# Understand the @Keep support annotation.
+-keep class android.support.annotation.Keep
+
+-keep @android.support.annotation.Keep class * {*;}
+
+-keepclasseswithmembers class * {
+    @android.support.annotation.Keep <methods>;
+}
+
+-keepclasseswithmembers class * {
+    @android.support.annotation.Keep <fields>;
+}
+
+-keepclasseswithmembers class * {
+    @android.support.annotation.Keep <init>(...);
 }
 #gson
 -keep class com.google.gson.** {*;}
@@ -154,3 +126,39 @@
 -keepclassmembers class rx.internal.util.unsafe.BaseLinkedQueueConsumerNodeRef {
     rx.internal.util.atomic.LinkedQueueNode consumerNode;
 }
+
+#忽略警告
+-ignorewarnings
+#保证是独立的jar,没有任何项目引用,如果不写就会认为我们所有的代码是无用的,从而把所有的代码压缩掉,导出一个空的jar
+-dontshrink
+#保护泛型
+-keepattributes Signature
+# 不混淆某个类（使用者可以看到类名）
+-keep class com.gnetop.ltgamecommon.login.LoginBackManager
+
+# 不混淆某个类中以 public 开始的方法（使用者可以看到该方法）
+-keepclassmembers class com.gnetop.ltgamecommon.login.LoginBackManager {
+    public *;
+}
+#保持 Parcelable 不被混淆
+-keep class * implements android.os.Parcelable {
+  public static final android.os.Parcelable$Creator *;
+}
+
+#保持 Serializable 不被混淆
+-keepnames class * implements java.io.Serializable
+
+#保持 Serializable 不被混淆并且enum 类也不被混淆
+-keepclassmembers class * implements java.io.Serializable {
+    static final long serialVersionUID;
+    private static final java.io.ObjectStreamField[] serialPersistentFields;
+    !static !transient <fields>;
+    !private <fields>;
+    !private <methods>;
+    private void writeObject(java.io.ObjectOutputStream);
+    private void readObject(java.io.ObjectInputStream);
+    java.lang.Object writeReplace();
+    java.lang.Object readResolve();
+}
+#---------------------------------1.实体类---------------------------------
+-keep class com.gnetop.ltgamecommon.model.** { *; }
